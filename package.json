@@ -1,0 +1,16 @@
+{
+  "name": "tobuildjs-project",
+  "version": "1.0.0",
+  "description": "A project to learn how to write a frontend framework",
+  "main": "index.js",
+  "scripts": {
+    "serve:examples": "npx http-server . -o ./examples"
+  },
+  "keywords": [],
+  "author": "Maksym Somushkin",
+  "license": "ISC",
+  "private": true,
+  "workspaces": [
+    "packages/runtime"
+  ]
+}
