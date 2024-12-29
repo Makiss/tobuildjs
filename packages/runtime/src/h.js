@@ -20,6 +20,7 @@ export function hFragment(children = []) {
   };
 }
 
+// The name h() is short for hyperscript, a script that creates hypertext
 export function h(tag, props = {}, children = []) {
   return {
     tag,
