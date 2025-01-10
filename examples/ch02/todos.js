@@ -1,107 +1,157 @@
-// State of the app
-const todos = ["Walk the dog", "Water the plants", "Sand the chairs"];
+import { h, hFragment, createApp } from "https://unpkg.com/tobuildjs@1.0.0";
 
-// HTML element references
-const addTodoInput = document.getElementById("todo-input");
-const addTodoButton = document.getElementById("add-todo-btn");
-const todosList = document.getElementById("todos-list");
+const DEFAULT_EDIT_STATE = {
+  idx: null,
+  original: null,
+  edited: null,
+};
 
-// Initialize the view
-for (const todo of todos) {
-  todosList.append(renderTodoInReadMode(todo));
+const state = {
+  currentTodo: "",
+  edit: DEFAULT_EDIT_STATE,
+  todos: ["Walk the dog", "Water the plants"],
+};
+
+const reducers = {
+  "update-current-todo": (state, currentTodo) => ({
+    ...state,
+    currentTodo,
+  }),
+  "add-todo": (state) => ({
+    ...state,
+    currentTodo: "",
+    todos: [...state.todos, state.currentTodo],
+  }),
+  "start-editing-todo": (state, idx) => ({
+    ...state,
+    edit: {
+      idx,
+      original: state.todos[idx],
+      edited: state.todos[idx],
+    },
+  }),
+  "edit-todo": (state, edited) => ({
+    ...state,
+    edit: {
+      ...state.edit,
+      edited,
+    },
+  }),
+  "save-edited-todo": (state) => {
+    const todos = [...state.todos];
+    todos[state.edit.idx] = state.edit.edited;
+
+    return {
+      ...state,
+      edit: DEFAULT_EDIT_STATE,
+      todos,
+    };
+  },
+  "cancel-editing-todo": (state) => ({
+    ...state,
+    edit: DEFAULT_EDIT_STATE,
+  }),
+  "remove-todo": (state, idx) => ({
+    ...state,
+    todos: state.todos.filter((_, i) => i !== idx),
+  }),
+};
+
+function App(state, emit) {
+  return hFragment([
+    h("h1", {}, ["My TODOs"]),
+    CreateTodo(state, emit),
+    TodoList(state, emit),
+  ]);
 }
 
-addTodoInput.addEventListener("input", () => {
-  addTodoButton.disabled = addTodoInput.value.length < 3;
-});
-
-addTodoInput.addEventListener("keydown", ({ key }) => {
-  if (key === "Enter" && addTodoInput.value.length >= 3) {
-    addTodo();
-  }
-});
-
-addTodoButton.addEventListener("click", () => {
-  addTodo();
-});
-
-// Functions
-function renderTodoInReadMode(todo) {
-  const li = document.createElement("li");
-  const span = document.createElement("span");
-  const button = document.createElement("button");
-
-  span.textContent = todo;
-  span.addEventListener("dblclick", () => {
-    const todosIndex = todos.indexOf(todo);
-    todosList.replaceChild(
-      renderTodoInEditMode(todo),
-      todosList.childNodes[todosIndex]
-    );
-  });
-
-  button.textContent = "Done";
-  button.addEventListener("click", () => {
-    const todosIndex = todos.indexOf(todo);
-    removeTodo(todosIndex);
-  });
-
-  li.append(span);
-  li.append(button);
-
-  return li;
+function CreateTodo({ currentTodo }, emit) {
+  return h("div", {}, [
+    h("label", { for: "todo-input" }, ["New TODO"]),
+    h("input", {
+      type: "text",
+      id: "todo-input",
+      value: currentTodo,
+      on: {
+        input: ({ target }) => emit("update-current-todo", target.value),
+        keydown: ({ key }) => {
+          if (key === "Enter" && currentTodo.length >= 3) {
+            emit("add-todo");
+          }
+        },
+      },
+    }),
+    h(
+      "button",
+      {
+        disabled: currentTodo.length < 3,
+        on: {
+          click: () => emit("add-todo"),
+        },
+      },
+      ["Add"]
+    ),
+  ]);
 }
 
-function renderTodoInEditMode(todo) {
-  const li = document.createElement("li");
-  const input = document.createElement("input");
-  const cancelBtn = document.createElement("button");
-  const saveBtn = document.createElement("button");
-
-  input.type = "text";
-  input.value = todo;
-
-  saveBtn.textContent = "Save";
-  saveBtn.addEventListener("click", () => {
-    const todoIndex = todos.indexOf(todo);
-    updateTodo(todoIndex, input.value);
-  });
-
-  cancelBtn.textContent = "Cancel";
-  cancelBtn.addEventListener("click", () => {
-    const todoIndex = todos.indexOf(todo);
-    todosList.replaceChild(
-      renderTodoInReadMode(todo),
-      todosList.childNodes[todoIndex]
-    );
-  });
-
-  li.append(input);
-  li.append(saveBtn);
-  li.append(cancelBtn);
-
-  return li;
+function TodoList({ todos, edit }, emit) {
+  return h(
+    "ul",
+    {},
+    todos.map((todo, i) => TodoItem({ todo, i, edit }, emit))
+  );
 }
 
-function addTodo() {
-  const description = addTodoInput.value;
-  const todo = renderTodoInReadMode(description);
+function TodoItem({ todo, i, edit }, emit) {
+  const isEditing = edit.idx === i;
 
-  todos.push(description);
-  todosList.append(todo);
-
-  addTodoInput.value = "";
-  addTodoButton.disabled = true;
+  return isEditing
+    ? h("li", {}, [
+        h("input", {
+          value: edit.edited,
+          on: {
+            input: ({ target }) => emit("edit-todo", target.value),
+          },
+        }),
+        h(
+          "button",
+          {
+            on: {
+              click: () => emit("save-edited-todo"),
+            },
+          },
+          ["Save"]
+        ),
+        h(
+          "button",
+          {
+            on: {
+              click: () => emit("cancel-editing-todo"),
+            },
+          },
+          ["Cancel"]
+        ),
+      ])
+    : h("li", {}, [
+        h(
+          "span",
+          {
+            on: {
+              dblclick: () => emit("start-editing-todo"),
+            },
+          },
+          [todo]
+        ),
+        h(
+          "button",
+          {
+            on: {
+              click: () => emit("remove-todo"),
+            },
+          },
+          ["Done"]
+        ),
+      ]);
 }
 
-function updateTodo(index, description) {
-  const todo = renderTodoInReadMode(description);
-
-  todos[index] = description;
-  todosList.replaceChild(todo, todosList.childNodes[index]);
-}
-
-function removeTodo(index) {
-  todos.splice(index, 1);
-  todosList.childNodes[index].remove();
-}
+createApp({ state, reducers, view: App }).mount(document.body);

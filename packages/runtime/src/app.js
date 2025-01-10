@@ -36,9 +36,10 @@ export function createApp({ state, view, reducers = {} }) {
       renderApp();
     },
     unmount() {
-        destroyDOM(vdom)
-        vdom = null
-        subscriptions.forEach(unsubscribe => unsubscribe())
-    }
+      destroyDOM(vdom);
+      vdom = null;
+      parentEl = null;
+      subscriptions.forEach((unsubscribe) => unsubscribe());
+    },
   };
 }
