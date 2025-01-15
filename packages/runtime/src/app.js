@@ -1,10 +1,12 @@
 import { destroyDOM } from "./destroy-dom";
 import { mountDOM } from "./mount-dom";
 import { Dispatcher } from "./dispatcher";
+import { patchDOM } from "./patch-dom";
 
 export function createApp({ state, view, reducers = {} }) {
   let parentEl = null;
   let vdom = null;
+  let isMounted = false;
   const dispatcher = new Dispatcher();
   const subscriptions = [dispatcher.afterEveryCommand(renderApp)];
 
@@ -22,18 +24,22 @@ export function createApp({ state, view, reducers = {} }) {
   }
 
   function renderApp() {
-    if (vdom) {
-      destroyDOM(vdom);
-    }
+    const newVdom = veiw(state, emit);
 
-    vdom = view(state, emit);
-    mountDOM(vdom, parentEl);
+    vdom = patchDOM(vdom, newVdom, parentEl);
   }
 
   return {
     mount(_parentEl) {
+      if (isMounted) {
+        throw new Error("The application is already mounted");
+      }
+
       parentEl = _parentEl;
-      renderApp();
+      vdom = view(state, emit);
+      mountDOM(vdom, parentEl);
+
+      isMounted = true;
     },
     unmount() {
       destroyDOM(vdom);
