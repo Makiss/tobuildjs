@@ -1,4 +1,4 @@
-import { createApp, h, hFragment } from "https://unpkg.com/tobuildjs@2.0.1";
+import { createApp, h, hFragment } from "https://unpkg.com/tobuildjs@2";
 
 const state = {
   currentTodo: "",
