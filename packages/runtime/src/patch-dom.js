@@ -13,7 +13,7 @@ import { ARRAY_DIFF_OP, arraysDiff, arraysDiffSequence } from "./utils/arrays";
 import { objectsDiff } from "./utils/objects";
 import { isNotBlankOrEmptyString } from "./utils/strings";
 
-export function patchDOM(oldVdom, newVdom, parentEl) {
+export function patchDOM(oldVdom, newVdom, parentEl, hostComponent = null) {
   if (!areNodesEqual(oldVdom, newVdom)) {
     const index = findIndexInParent(parentEl, oldVdom.el);
     destroyDOM(oldVdom);
@@ -33,7 +33,7 @@ export function patchDOM(oldVdom, newVdom, parentEl) {
       break;
   }
 
-  patchChildren(oldVdom, newVdom);
+  patchChildren(oldVdom, newVdom, hostComponent);
 
   return newVdom;
 }
@@ -125,7 +125,7 @@ function patchEvents(el, oldListeners = {}, oldEvents = {}, newEvents = {}) {
   return addedListeners;
 }
 
-function patchChildren(oldVdom, newVdom) {
+function patchChildren(oldVdom, newVdom, hostComponent) {
   const oldChildren = extractChildren(oldVdom);
   const newChildren = extractChildren(newVdom);
   const parentEl = oldVdom.el;
@@ -134,26 +134,32 @@ function patchChildren(oldVdom, newVdom) {
 
   for (const operation of diffSeq) {
     const { originalIndex, index, item } = operation;
+    const offset = hostComponent?.offset ?? 0;
 
     switch (operation.op) {
       case ARRAY_DIFF_OP.ADD:
-        mountDOM(item, parentEl, index);
+        mountDOM(item, parentEl, index + offset);
         break;
       case ARRAY_DIFF_OP.REMOVE:
         destroyDOM(item);
         break;
       case ARRAY_DIFF_OP.MOVE:
         const oldChild = oldChildren[originalIndex];
-        const newChild = newChildren[index];
+        const newChild = newChildren[index + offset];
         const el = oldChild.el;
         const elAtTargetIndex = parentEl.childNodes[index];
 
         parentEl.insertBefore(el, elAtTargetIndex);
-        patchDOM(oldChild, newChild, parentEl);
+        patchDOM(oldChild, newChild, parentEl, hostComponent);
 
         break;
       case ARRAY_DIFF_OP.NOOP:
-        patchDOM(oldChildren[originalIndex], newChildren[index], parentEl);
+        patchDOM(
+          oldChildren[originalIndex],
+          newChildren[index],
+          parentEl,
+          hostComponent
+        );
         break;
       default:
         throw new Error(`Unknown array diff operation ${operation.op}`);
