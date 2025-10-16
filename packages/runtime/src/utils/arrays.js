@@ -57,7 +57,7 @@ class ArrayWithOriginalIndices {
     return operation;
   }
 
-  isNoop(index, newArray) {
+  isNoop(index, newArr) {
     if (index >= this.length) {
       return false;
     }

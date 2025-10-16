@@ -44,7 +44,7 @@ function patchText(oldVdom, newVdom) {
   const { value: newText } = newVdom;
 
   if (oldText !== newText) {
-    el.node.Value = newText;
+    el.nodeValue = newText;
   }
 }
 
@@ -128,7 +128,7 @@ function patchEvents(el, oldListeners = {}, oldEvents = {}, newEvents = {}) {
 function patchChildren(oldVdom, newVdom) {
   const oldChildren = extractChildren(oldVdom);
   const newChildren = extractChildren(newVdom);
-  parentEl = oldVdom.el;
+  const parentEl = oldVdom.el;
 
   const diffSeq = arraysDiffSequence(oldChildren, newChildren, areNodesEqual);
 
