@@ -1,14 +1,18 @@
-export function addEventListener(eventName, handler, el) {
-  el.addEventListener(eventName, handler);
+export function addEventListener(eventName, handler, el, hostComponent = null) {
+  function boundHandler(...args) {
+    hostComponent ? handler.apply(hostComponent, args) : handler(...args);
+  }
 
-  return handler;
+  el.addEventListener(eventName, boundHandler);
+
+  return boundHandler;
 }
 
-export function addEventListeners(listeners = {}, el) {
+export function addEventListeners(listeners = {}, el, hostComponent = null) {
   const addedListeners = {};
 
   Object.entries(listeners).forEach(([eventName, handler]) => {
-    const listener = addEventListener(eventName, handler, el);
+    const listener = addEventListener(eventName, handler, el, hostComponent);
     addedListeners[eventName] = listener;
   });
 

@@ -2,16 +2,16 @@ import { DOM_TYPES } from "./h";
 import { setAttributes } from "./attributes";
 import { addEventListeners } from "./events";
 
-export function mountDOM(vdom, parentEl, index) {
+export function mountDOM(vdom, parentEl, index, hostComponent) {
   switch (vdom.type) {
     case DOM_TYPES.TEXT:
       createTextNode(vdom, parentEl, index);
       break;
     case DOM_TYPES.ELEMENT:
-      createElementNode(vdom, parentEl, index);
+      createElementNode(vdom, parentEl, index, hostComponent);
       break;
     case DOM_TYPES.FRAGMENT:
-      createFragmentNode(vdom, parentEl, index);
+      createFragmentNode(vdom, parentEl, index, hostComponent);
       break;
     default:
       throw new Error(`Can't mount DOM of type: ${vdom.type}`);
@@ -42,29 +42,29 @@ function createTextNode(vdom, parentEl, index) {
   insert(textNode, parentEl, index);
 }
 
-function createFragmentNode(vdom, parentEl, index) {
+function createFragmentNode(vdom, parentEl, index, hostComponent) {
   const { children } = vdom;
   vdom.el = parentEl;
 
   children.forEach((child, i) =>
-    mountDOM(child, parentEl, index ? index + i : null)
+    mountDOM(child, parentEl, index ? index + i : null, hostComponent)
   );
 }
 
-function createElementNode(vdom, parentEl, index) {
+function createElementNode(vdom, parentEl, index, hostComponent) {
   const { tag, props, children } = vdom;
 
   const element = document.createElement(tag);
-  addProps(element, props, vdom);
+  addProps(element, props, vdom, hostComponent);
   vdom.el = element;
 
-  children.forEach((child) => mountDOM(child, element));
+  children.forEach((child) => mountDOM(child, element, null, hostComponent));
   insert(element, parentEl, index);
 }
 
-function addProps(el, props, vdom) {
+function addProps(el, props, vdom, hostComponent) {
   const { on: events, ...attrs } = props;
 
-  vdom.listeners = addEventListeners(events, el);
+  vdom.listeners = addEventListeners(events, el, hostComponent);
   setAttributes(attrs, el);
 }
